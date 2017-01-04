@@ -1,0 +1,55 @@
+#!/bin/sh 
+
+ini_file=/home/share/s3l_linux_sdk/ambarella/boards/mango/bsp/mango_s3l63_ddr_k4b4g1646d_bcma.ini
+build_dir=/home/share/s3l_linux_sdk/ambarella/boards/mango
+bst_dir=/home/share/s3l_linux_sdk/ambarella/out/mango/amboot/bst_release.bin
+out_dir=/home/share/bst/
+
+fun_pad_term()
+{
+	num=`cat $ini_file | grep -n PAD_TERM | awk -F : '{print $1}'`
+	if [ -z "$num" ] ; then
+		echo "get num failed"
+		exit 0;
+	fi
+	
+	value=`cat $ini_file | grep -n PAD_TERM | awk -F [/=] '{print $2}' | sed -e 's/"//' | sed -e 's/"//'`
+	if [ -z "$value" ] ; then
+		echo "get value failed"
+		exit 0;
+	fi
+	
+	eval "sed -i ""'""$num""s/""$value""/""$1""/""'"" $ini_file"
+}
+
+fun_dram_frequency()
+{
+	num=`cat $ini_file | grep -n DRAM_FREQUENCY | awk -F : '{print $1}'`
+	if [ -z "$num" ] ; then
+		echo "get num failed"
+		exit 0;
+	fi
+	
+	value=`cat $ini_file | grep -n DRAM_FREQUENCY | awk -F = '{print $2}' | awk '{print $1}' | sed -e 's/"//'`
+	if [ -z "$value" ] ; then
+		echo "get value failed"
+		exit 0;
+	fi
+	
+	eval "sed -i ""'""$num""s/""$value""/""$1""/""'"" $ini_file"
+}
+
+
+fun_create_bst()
+{
+	mkdir -p $out_dir
+	
+	fun_pad_term "$1"
+	fun_dram_frequency "$2"
+
+	cd $build_dir
+	make amboot
+	cp -af $bst_dir $out_dir/bst_release_$1_$2.bin
+}
+
+fun_create_bst "0x20030" "720" 
